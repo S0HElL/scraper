@@ -2,6 +2,7 @@ from playwright._impl._errors import TimeoutError
 from playwright.sync_api import sync_playwright
 import json
 import time
+import os
 
 OUTPUT_JSONL = "professors.jsonl"
 
@@ -147,8 +148,7 @@ def main():
         page.locator("li[title='جستجوی پیشرفته']").click()
         page.wait_for_timeout(3000)
 
-        universities = ["دانشگاه تهران"]  # Add more later
-
+        universities = ["دانشگاه تهران"]
         all_professors = {} # Dictionary to store unique professors, keyed by name
 
         for uni in universities:
@@ -387,7 +387,29 @@ def main():
         
         # FINAL WRITE TO JSONL FILE
         professor_count = 0
-        with open(OUTPUT_JSONL, "w", encoding="utf-8") as f: # Use "w" to overwrite/create new file
+        
+        # Logic to find the last ID if the file exists and is not empty
+        if os.path.exists(OUTPUT_JSONL) and os.path.getsize(OUTPUT_JSONL) > 0:
+            print(f"  → Found existing {OUTPUT_JSONL}. Reading last ID for offset...")
+            try:
+                with open(OUTPUT_JSONL, "r", encoding="utf-8") as f_read:
+                    # Read all lines
+                    lines = f_read.readlines()
+                    if lines:
+                        # Get the last non-empty line
+                        last_line = next(line for line in reversed(lines) if line.strip())
+                        # Parse the last line's JSON to get the 'id'
+                        last_data = json.loads(last_line)
+                        professor_count = int(last_data.get('id', 0))
+                        print(f"  → Initializing professor_count with last ID: {professor_count}")
+                    else:
+                        print(f"  → {OUTPUT_JSONL} is empty.")
+            except Exception as e:
+                print(f"  → Warning: Could not read last ID from {OUTPUT_JSONL}. Resetting count. Error: {e}")
+                professor_count = 0
+
+        # Now professor_count is the last ID + 1 (or 0 if file is new/empty/error)
+        with open(OUTPUT_JSONL, "a", encoding="utf-8") as f: # Use "a" to append to the file
             for key, prof_data in all_professors.items():
                 professor_count += 1
                 

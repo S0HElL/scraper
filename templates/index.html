@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Professor Data Viewer ({{ total_count }} Results)</title>
+    <!-- Using a minimal Bootstrap for styling -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
+</head>
+<body class="p-4">
+    <div class="container">
+        <h1 class="mb-4 text-center">مشاهده داده اساتید دانشگاه</h1>
+
+        <!-- Search Form -->
+        <form method="get" action="/" class="mb-4">
+            <div class="input-group">
+                <input type="text" class="form-control" name="search" placeholder="جستجو بر اساس نام، دانشگاه، گرایش یا حوزه پژوهشی..." value="{{ search_term }}" dir="rtl">
+                <button class="btn btn-primary" type="submit">جستجو</button>
+                <a href="/" class="btn btn-secondary">پاک کردن</a>
+            </div>
+        </form>
+
+        <p>نتایج: {{ total_count }}</p>
+
+        <!-- Data Table -->
+        <div class="table-responsive">
+            <table class="table table-striped table-hover table-bordered">
+                <thead>
+                    <tr>
+                        {% macro sort_link(field, display_name) %}
+                            {% set new_dir = 'desc' if sort_by == field and sort_dir == 'asc' else 'asc' %}
+                            {% set icon = ' ▲' if sort_by == field and sort_dir == 'asc' else (' ▼' if sort_by == field and sort_dir == 'desc' else '') %}
+                            <th scope="col">
+                                <a href="{{ url_for('index', page=1, search=search_term, sort_by=field, sort_dir=new_dir) }}" class="text-white text-decoration-none">
+                                    {{ display_name }}{{ icon }}
+                                </a>
+                            </th>
+                        {% endmacro %}
+                        
+                        {{ sort_link('name', 'نام') }}
+                        {{ sort_link('university', 'دانشگاه') }}
+                        {{ sort_link('major', 'گرایش') }}
+                        {{ sort_link('h_index', 'H-Index') }}
+                        <th>پست الکترونیک</th>
+                        <th>حوزه های پژوهشی</th>
+                        <th>پروفایل</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for professor in professors %}
+                    <tr>
+                        <td>{{ professor.name }}</td>
+                        <td>{{ professor.university }}</td>
+                        <td>{{ professor.major }}</td>
+                        <td>{{ professor.h_index }}</td>
+                        <td><a href="mailto:{{ professor.email }}">{{ professor.email }}</a></td>
+                        <td>
+                            {% for field in professor.research_fields %}
+                                <span class="badge bg-info text-dark m-1">{{ field }}</span>
+                            {% endfor %}
+                        </td>
+                        <td><a href="{{ professor.profile_url }}" target="_blank">لینک</a></td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td colspan="7" class="text-center">هیچ استادی پیدا نشد.</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Pagination -->
+        <nav aria-label="Page navigation" class="mt-4">
+            <ul class="pagination justify-content-center">
+                {% if page > 1 %}
+                    <li class="page-item">
+                        <a class="page-link" href="{{ url_for('index', page=page-1, search=search_term, sort_by=sort_by, sort_dir=sort_dir) }}">قبلی</a>
+                    </li>
+                {% else %}
+                    <li class="page-item disabled">
+                        <span class="page-link">قبلی</span>
+                    </li>
+                {% endif %}
+
+                {% for i in range(1, total_pages + 1) %}
+                    {% if i == page %}
+                        <li class="page-item active"><span class="page-link">{{ i }}</span></li>
+                    {% elif i > page - 3 and i < page + 3 %}
+                        <li class="page-item"><a class="page-link" href="{{ url_for('index', page=i, search=search_term, sort_by=sort_by, sort_dir=sort_dir) }}">{{ i }}</a></li>
+                    {% elif i == 1 and page > 3 %}
+                        <li class="page-item"><a class="page-link" href="{{ url_for('index', page=1, search=search_term, sort_by=sort_by, sort_dir=sort_dir) }}">1</a></li>
+                        <li class="page-item disabled"><span class="page-link">...</span></li>
+                    {% elif i == total_pages and page < total_pages - 2 %}
+                        <li class="page-item disabled"><span class="page-link">...</span></li>
+                        <li class="page-item"><a class="page-link" href="{{ url_for('index', page=total_pages, search=search_term, sort_by=sort_by, sort_dir=sort_dir) }}">{{ total_pages }}</a></li>
+                    {% endif %}
+                {% endfor %}
+
+                {% if page < total_pages %}
+                    <li class="page-item">
+                        <a class="page-link" href="{{ url_for('index', page=page+1, search=search_term, sort_by=sort_by, sort_dir=sort_dir) }}">بعدی</a>
+                    </li>
+                {% else %}
+                    <li class="page-item disabled">
+                        <span class="page-link">بعدی</span>
+                    </li>
+                {% endif %}
+            </ul>
+        </nav>
+    </div>
+</body>
+</html>

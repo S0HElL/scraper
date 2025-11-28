@@ -1,0 +1,111 @@
+/* Font Declaration */
+@font-face {
+    font-family: 'Vazir';
+    src: url('../fonts/Vazir.ttf') format('truetype');
+    font-weight: normal;
+    font-style: normal;
+}
+
+/* Global Dark Theme */
+body {
+    background-color: #1a1a1a; /* Dark background */
+    color: #ffffff; /* White text for maximum visibility on dark background */
+    font-family: 'Vazir', Tahoma, sans-serif; /* Apply Vazir font globally */
+}
+
+h1, h2, h3, h4, h5, h6 {
+    color: #ffffff;
+}
+
+a {
+    color: #64b5f6; /* Lighter blue for links */
+}
+
+a:hover {
+    color: #90caf9;
+}
+
+/* Bootstrap Overrides for Dark Mode */
+
+/* Main Container and Cards */
+.container {
+    background-color: #1a1a1a; 
+}
+
+/* Input Fields (Search) */
+.form-control {
+    background-color: #333333;
+    color: #e0e0e0;
+    border-color: #444444;
+}
+
+.form-control::placeholder {
+    color: #aaa;
+}
+
+/* Buttons */
+.btn-primary {
+    background-color: #6200ea;
+    border-color: #6200ea;
+}
+
+.btn-secondary {
+    background-color: #444444;
+    border-color: #444444;
+}
+
+/* Table Styling for Dark Mode */
+.table {
+    --bs-table-bg: #212121; /* Table background */
+    --bs-table-striped-bg: #2c2c2c; /* Striped rows */
+    --bs-table-hover-bg: #383838; /* Hover rows */
+    --bs-table-border-color: #444444;
+    color: #ffffff;
+}
+
+.table thead th {
+    background-color: #383838;
+    color: #ffffff;
+    position: sticky; 
+    top: 0; 
+    z-index: 10; 
+}
+
+.table-bordered {
+    border-color: #444444;
+}
+
+.table-responsive {
+    max-height: 70vh; 
+    overflow-y: auto; 
+    border: 1px solid #444444;
+    border-radius: 0.25rem;
+}
+
+/* Badges (Research Fields) */
+.badge.bg-info.text-dark {
+    background-color: #81d4fa !important;
+    color: #000000 !important;
+}
+
+/* Pagination */
+.page-link {
+    background-color: #383838;
+    color: #ffffff;
+    border-color: #444444;
+}
+
+.page-item.disabled .page-link {
+    background-color: #212121;
+    color: #777777;
+}
+
+.page-item.active .page-link {
+    background-color: #6200ea !important;
+    border-color: #6200ea !important;
+    color: #ffffff !important;
+}
+/* Ensure table cell text is white */
+.table tbody td {
+    color: #ffffff;
+}
