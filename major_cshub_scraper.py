@@ -47,7 +47,7 @@ def fill_dropdown(page, placeholder, value):
 
 
 # -------------------------------------------
-# Scrape professor card (REPLACEMENT - more robust)
+# Scrape professor card (REPLACED - robust)
 # -------------------------------------------
 def parse_professor(p):
     # NAME: try several patterns
@@ -134,6 +134,7 @@ def parse_professor(p):
 
     return name, majors, h_index, profile_url, email, fields_str
 
+
 # -------------------------------------------
 # MAIN
 # -------------------------------------------
@@ -186,23 +187,40 @@ def main():
             btn = page.locator(button_selector)
 
             print("  → Found button. Forcing scroll…")
-            btn.scroll_into_view_if_needed()
+            # Try scroll into view safely using element handle if available
+            try:
+                handle = btn.element_handle()
+                if handle:
+                    page.evaluate("el => el.scrollIntoView({block: 'center'})", handle)
+                else:
+                    btn.scroll_into_view_if_needed()
+            except Exception:
+                try:
+                    btn.scroll_into_view_if_needed()
+                except Exception:
+                    pass
 
             # Try normal click
+            clicked = False
             try:
                 btn.click(timeout=4000)
                 print("  → Normal click succeeded.")
+                clicked = True
             except Exception as e:
                 print("  → Normal click failed:", e)
 
+            if not clicked:
                 # Force-enabled (Angular often marks button disabled)
                 print("  → Attempting to force-enable...")
-                page.evaluate("""
-                    sel => {
-                        const b = document.querySelector(sel);
-                        if (b) { b.disabled = false; b.removeAttribute('disabled'); }
-                    }
-                """, button_selector)
+                try:
+                    page.evaluate("""
+                        sel => {
+                            const b = document.querySelector(sel);
+                            if (b) { b.disabled = false; b.removeAttribute('disabled'); b.setAttribute('aria-disabled', 'false'); }
+                        }
+                    """, button_selector)
+                except Exception:
+                    pass
 
                 page.wait_for_timeout(200)
 
@@ -211,10 +229,13 @@ def main():
                     print("  → Trying forced click()…")
                     btn.click(force=True, timeout=4000)
                     print("  → Forced click succeeded.")
+                    clicked = True
                 except Exception as e2:
                     print("  → Forced click failed:", e2)
 
-                    # Final fallback: direct DOM dispatch
+            if not clicked:
+                # Final fallback: direct DOM dispatch of mouse events (mousedown/mouseup/click)
+                try:
                     print("  → Trying DOM click injection…")
                     page.evaluate("""
                         sel => {
@@ -226,15 +247,19 @@ def main():
                             }
                         }
                     """, button_selector)
-
                     print("  → DOM event click dispatched.")
-
+                    clicked = True
+                except Exception as e3:
+                    print("  → DOM click injection failed:", e3)
 
             page.wait_for_timeout(1200)
 
             # Scroll down to ensure the professors are in the viewport and to move past the search menu
             print("  → Scrolling down to view results...")
-            page.mouse.wheel(0, 500)
+            try:
+                page.mouse.wheel(0, 500)
+            except Exception:
+                pass
             page.wait_for_timeout(500)
 
             # ----------------------------------------------------------------
@@ -290,57 +315,42 @@ def main():
                 cleaned = clean_major(major_title)
                 print(f"    -> Opening major: {cleaned}")
 
-                # find the exact element in results_section and click it (try multiple fallbacks)
-                clicked = False
-                try:
-                    mbtn = results_section.locator(f"button:has-text('{major_title}'), text={major_title}").first
-                    if mbtn.count() > 0:
-                        try:
-                            mbtn.click(force=True)
-                        except Exception:
-                            # ensure visible then DOM click
-                            handle = mbtn.element_handle()
-                            if handle:
-                                page.evaluate("el => el.click()", handle)
-                        clicked = True
-                except Exception:
-                    clicked = False
+                # Simplified and robust locator: find a button inside results_section containing the title text
+                mbtn = results_section.locator(f"button:has-text('{major_title}')").first
+                
+                # Check if we found a button. If not, fallback to text which will likely be the container element.
+                if mbtn.count() == 0:
+                    mbtn = results_section.locator(f"text={major_title}").first
 
-                # If click not successful, try clicking by partial text match or index
-                if not clicked:
-                    try:
-                        alt = results_section.locator(f"text={major_title}").first
-                        if alt.count() > 0:
-                            try:
-                                alt.click(force=True)
-                                clicked = True
-                            except Exception:
-                                handle = alt.element_handle()
-                                if handle:
-                                    page.evaluate("el => el.click()", handle)
-                                    clicked = True
-                    except Exception:
-                        clicked = False
-
-                if not clicked:
-                    print(f"      → Warning: couldn't click major element for '{major_title}'. Skipping.")
+                if mbtn.count() == 0:
+                    print(f"      → Warning: couldn't locate major element for '{major_title}'. Skipping.")
                     continue
 
-                # Wait for professor cards to appear; allow multiple pages inside the major
+                # Click the element (button or container), using a 5s timeout.
+                # If Playwright can't click because of an overlay, it will raise an error.
+                try:
+                    print(f"      → Clicking major button...")
+                    mbtn.click(timeout=5000)
+                except Exception as e:
+                    print(f"      → Error clicking major '{major_title}':", type(e).__name__, e)
+                    continue
+                
+                # Wait for professor cards to appear
+                PROFESSOR_CARD_SELECTOR = "div.card.bg-base-100.shadow-xl.mb-4, .result-professor"
                 try:
                     page.wait_for_selector(PROFESSOR_CARD_SELECTOR, state="visible", timeout=10000)
                 except TimeoutError:
                     print(f"      → No professor cards found for major: {cleaned} (Timeout)")
+                    # Click to collapse the empty major before continuing
+                    try:
+                        mbtn.click(timeout=5000)
+                    except Exception:
+                        pass
                     continue
-
+                
                 # After expanding the major, gather visible professor cards (scoped)
-                prof_cards = page.locator(PROFESSOR_CARD_SELECTOR).filter(has=results_section).filter(has=page.locator(f"text={cleaned}").first) \
-                              if page.locator(f"text={cleaned}").count() > 0 else page.locator(PROFESSOR_CARD_SELECTOR).filter(has=results_section)
-
-                # fallback: if the above scoping returns 0, just take visible prof cards in results_section
-                if prof_cards.count() == 0:
-                    prof_cards = results_section.locator(PROFESSOR_CARD_SELECTOR).filter(has=results_section)
-
+                # The cards should be direct visible descendants of the expanded area.
+                prof_cards = page.locator(PROFESSOR_CARD_SELECTOR)
                 total = prof_cards.count()
                 print(f"      → Found {total} professor cards for '{cleaned}'.")
 
@@ -358,9 +368,14 @@ def main():
                         print("      → Error parsing professor:", type(e).__name__, e)
                         continue
 
+                # Click the button again to collapse the major accordion
+                try:
+                    mbtn.click(timeout=5000)
+                except Exception:
+                    pass
+                
                 # small pause before proceeding to next major
                 page.wait_for_timeout(500)
-
 
         print("\n=== Finished ===")
         browser.close()
