@@ -6,56 +6,75 @@
     font-style: normal;
 }
 
-/* Global Dark Theme */
+/* Base styles applied to all themes */
 body {
-    background-color: #1a1a1a; /* Dark background */
-    color: #ffffff; /* White text for maximum visibility on dark background */
     font-family: 'Vazir', Tahoma, sans-serif; /* Apply Vazir font globally */
 }
 
-h1, h2, h3, h4, h5, h6 {
-    color: #ffffff;
-}
-
+/* Link colors (may be overridden by theme classes if necessary) */
 a {
-    color: #64b5f6; /* Lighter blue for links */
+    color: #007bff; /* Default blue for links */
 }
 
 a:hover {
+    color: #0056b3;
+}
+
+/* =========================================================================
+   DARK THEME (.theme-dark)
+   ========================================================================= */
+.theme-dark,
+.theme-dark body {
+    background-color: #1a1a1a; /* Dark background */
+    color: #ffffff; /* White text for maximum visibility on dark background */
+}
+
+.theme-dark h1, 
+.theme-dark h2, 
+.theme-dark h3, 
+.theme-dark h4, 
+.theme-dark h5, 
+.theme-dark h6 {
+    color: #ffffff;
+}
+
+.theme-dark a {
+    color: #64b5f6; /* Lighter blue for links */
+}
+
+.theme-dark a:hover {
     color: #90caf9;
 }
 
-/* Bootstrap Overrides for Dark Mode */
-
 /* Main Container and Cards */
-.container {
+.theme-dark .container {
     background-color: #1a1a1a; 
 }
 
 /* Input Fields (Search) */
-.form-control {
+.theme-dark .form-control {
     background-color: #333333;
     color: #e0e0e0;
     border-color: #444444;
 }
 
-.form-control::placeholder {
+.theme-dark .form-control::placeholder {
     color: #aaa;
 }
 
 /* Buttons */
-.btn-primary {
+.theme-dark .btn-primary {
     background-color: #6200ea;
     border-color: #6200ea;
 }
 
-.btn-secondary {
+.theme-dark .btn-secondary {
     background-color: #444444;
     border-color: #444444;
 }
 
 /* Table Styling for Dark Mode */
-.table {
+.theme-dark .table {
     --bs-table-bg: #212121; /* Table background */
     --bs-table-striped-bg: #2c2c2c; /* Striped rows */
     --bs-table-hover-bg: #383838; /* Hover rows */
@@ -63,7 +82,11 @@ a:hover {
     color: #ffffff;
 }
 
-.table thead th {
+.theme-dark .table tbody td {
+    color: #ffffff; /* Ensure table cell text is white */
+}
+
+.theme-dark .table thead th {
     background-color: #383838;
     color: #ffffff;
     position: sticky; 
@@ -71,41 +94,122 @@ a:hover {
     z-index: 10; 
 }
 
-.table-bordered {
+.theme-dark .table-bordered {
     border-color: #444444;
 }
 
-.table-responsive {
-    max-height: 70vh; 
-    overflow-y: auto; 
+.theme-dark .table-responsive {
     border: 1px solid #444444;
-    border-radius: 0.25rem;
 }
 
 /* Badges (Research Fields) */
-.badge.bg-info.text-dark {
-    background-color: #81d4fa !important;
-    color: #000000 !important;
+.theme-dark .badge.bg-info.text-dark {
+    background-color: #ff8c00 !important; /* Light orange color */
+    color: #ffffff !important; /* White text for contrast */
 }
 
 /* Pagination */
-.page-link {
+.theme-dark .page-link {
     background-color: #383838;
     color: #ffffff;
     border-color: #444444;
 }
 
-.page-item.disabled .page-link {
+.theme-dark .page-item.disabled .page-link {
     background-color: #212121;
     color: #777777;
 }
 
-.page-item.active .page-link {
+.theme-dark .page-item.active .page-link {
     background-color: #6200ea !important;
     border-color: #6200ea !important;
     color: #ffffff !important;
 }
-/* Ensure table cell text is white */
-.table tbody td {
-    color: #ffffff;
+
+
+/* =========================================================================
+   LIGHT THEME (.theme-light)
+   ========================================================================= */
+.theme-light body {
+    background-color: #f8f9fa; /* Light background */
+    color: #212529; /* Dark text */
+}
+
+.theme-light h1, 
+.theme-light h2, 
+.theme-light h3, 
+.theme-light h4, 
+.theme-light h5, 
+.theme-light h6 {
+    color: #000000;
+}
+
+/* Main Container and Cards */
+.theme-light .container {
+    background-color: #f8f9fa; 
+}
+
+/* Input Fields (Search) */
+.theme-light .form-control {
+    background-color: #ffffff;
+    color: #212529;
+    border-color: #ced4da;
+}
+
+.theme-light .form-control::placeholder {
+    color: #6c757d;
+}
+
+/* Table Styling for Light Mode */
+.theme-light .table {
+    --bs-table-bg: #ffffff; /* Table background */
+    --bs-table-striped-bg: #f2f2f2; /* Striped rows */
+    --bs-table-hover-bg: #e9ecef; /* Hover rows */
+    --bs-table-border-color: #dee2e6;
+    color: #212529;
+}
+
+.theme-light .table tbody td {
+    color: #212529; /* Ensure table cell text is dark */
+}
+
+.theme-light .table thead th {
+    background-color: #e9ecef;
+    color: #212529;
+    position: sticky; 
+    top: 0; 
+    z-index: 10; 
+}
+
+.theme-light .table-bordered {
+    border-color: #dee2e6;
+}
+
+.theme-light .table-responsive {
+    border: 1px solid #dee2e6;
+}
+
+/* Badges (Research Fields) - Default Bootstrap appearance is usually fine on light mode */
+.theme-light .badge.bg-info.text-dark {
+    /* Keep the original light blue background and dark text */
+    background-color: #81d4fa !important;
+    color: #000000 !important;
+}
+
+/* Pagination */
+.theme-light .page-link {
+    background-color: #ffffff;
+    color: #007bff;
+    border-color: #dee2e6;
+}
+
+.theme-light .page-item.disabled .page-link {
+    background-color: #ffffff;
+    color: #6c757d;
+}
+
+.theme-light .page-item.active .page-link {
+    background-color: #6200ea !important;
+    border-color: #6200ea !important;
+    color: #ffffff !important;
 }

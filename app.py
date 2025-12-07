@@ -1,5 +1,5 @@
 import math
-from flask import Flask, render_template, request
+from flask import Flask, render_template, request, make_response
 from pymongo import MongoClient
 
 app = Flask(__name__)
@@ -29,10 +29,23 @@ def index():
     if professors_collection is None:
         return "<h1>Database Connection Error</h1><p>Failed to connect to MongoDB. Please ensure the MongoDB server is running.</p>", 500
     
+    # Theme handling
+    theme = request.cookies.get('theme', 'dark')
+    
+    # Check if a new theme is requested via query parameter
+    requested_theme = request.args.get('theme')
+    if requested_theme in ['light', 'dark']:
+        theme = requested_theme
+
     page = request.args.get('page', 1, type=int)
     search_term = request.args.get('search', '').strip()
     sort_by = request.args.get('sort_by', 'university').strip()
     sort_dir = request.args.get('sort_dir', 'asc').strip()
+    
+    # Research field filtering
+    research_fields_filter_raw = request.args.get('fields', '').strip()
+    research_fields_filter = [f.strip() for f in research_fields_filter_raw.split(',') if f.strip()]
+    
     per_page = 20
 
     query = {}
@@ -47,7 +60,12 @@ def index():
                 {"research_fields": regex_query}
             ]
         }
-
+    
+    # Add research fields filter to query
+    if research_fields_filter:
+        # Match documents where research_fields array contains ALL selected fields
+        query["research_fields"] = {"$all": research_fields_filter}
+        
     
     total_count = professors_collection.count_documents(query)
     total_pages = math.ceil(total_count / per_page)
@@ -90,14 +108,20 @@ def index():
                           .skip((page - 1) * per_page)
                           .limit(per_page))
 
-    return render_template('index.html',
-                           professors=professors,
-                           page=page,
-                           total_pages=total_pages,
-                           search_term=search_term,
-                           total_count=total_count,
-                           sort_by=sort_by,
-                           sort_dir=sort_dir)
+    # Render template and set theme cookie
+    response = make_response(render_template('index.html',
+                                             professors=professors,
+                                             page=page,
+                                             total_pages=total_pages,
+                                             search_term=search_term,
+                                             total_count=total_count,
+                                             sort_by=sort_by,
+                                             sort_dir=sort_dir,
+                                             theme=theme,
+                                             research_fields_filter=research_fields_filter,
+                                             research_fields_filter_raw=research_fields_filter_raw))
+    response.set_cookie('theme', theme)
+    return response
 
 if __name__ == '__main__':
     # We rely on the index function to handle DB connection errors gracefully.

@@ -8,9 +8,16 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
 </head>
-<body class="p-4">
+<body class="p-4 theme-{{ theme }}">
     <div class="container">
-        <h1 class="mb-4 text-center">مشاهده داده اساتید دانشگاه</h1>
+        {% set new_theme = 'light' if theme == 'dark' else 'dark' %}
+        {% set theme_display = 'حالت روشن' if theme == 'dark' else 'حالت تاریک' %}
+        {% set theme_link = url_for('index', page=page, search=search_term, sort_by=sort_by, sort_dir=sort_dir, theme=new_theme) %}
+        
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h1 class="mb-0 text-center flex-grow-1">مشاهده اساتید دانشگاه‌های ایران</h1>
+            <a href="{{ theme_link }}" class="btn btn-secondary">{{ theme_display }}</a>
+        </div>
 
         <!-- Search Form -->
         <form method="get" action="/" class="mb-4">
@@ -20,6 +27,34 @@
                 <a href="/" class="btn btn-secondary">پاک کردن</a>
             </div>
         </form>
+
+       {% if research_fields_filter %}
+       <div class="mb-3">
+           <p class="mb-1">فیلترهای فعال:</p>
+           {% for field in research_fields_filter %}
+               {% set new_filter_list = [] %}
+               {# Create a new list without the current field to generate the removal link #}
+               {% for f in research_fields_filter %}
+                   {% if f != field %}
+                       {% set _ = new_filter_list.append(f) %}
+                   {% endif %}
+               {% endfor %}
+               {% set new_fields_raw = new_filter_list|join(',') %}
+               
+               {% set filter_url = url_for('index',
+                   page=1,
+                   search=search_term,
+                   sort_by=sort_by,
+                   sort_dir=sort_dir,
+                   fields=new_fields_raw,
+                   theme=theme) %}
+                   
+               <a href="{{ filter_url }}" class="badge bg-danger text-light m-1 d-inline-flex align-items-center">
+                   <span class="ms-1">✕</span> {{ field }}
+               </a>
+           {% endfor %}
+       </div>
+       {% endif %}
 
         <p>نتایج: {{ total_count }}</p>
 
@@ -32,7 +67,7 @@
                             {% set new_dir = 'desc' if sort_by == field and sort_dir == 'asc' else 'asc' %}
                             {% set icon = ' ▲' if sort_by == field and sort_dir == 'asc' else (' ▼' if sort_by == field and sort_dir == 'desc' else '') %}
                             <th scope="col">
-                                <a href="{{ url_for('index', page=1, search=search_term, sort_by=field, sort_dir=new_dir) }}" class="text-white text-decoration-none">
+                                <a href="{{ url_for('index', page=1, search=search_term, sort_by=field, sort_dir=new_dir, fields=research_fields_filter_raw, theme=theme) }}" class="text-decoration-none">
                                     {{ display_name }}{{ icon }}
                                 </a>
                             </th>
@@ -57,7 +92,38 @@
                         <td><a href="mailto:{{ professor.email }}">{{ professor.email }}</a></td>
                         <td>
                             {% for field in professor.research_fields %}
-                                <span class="badge bg-info text-dark m-1">{{ field }}</span>
+                                
+                                {% set is_active = field in research_fields_filter %}
+                                
+                                {% set current_fields = research_fields_filter %}
+                                
+                                {# Generate the next filter list #}
+                                {% set next_fields_list = [] %}
+                                {% if is_active %}
+                                    {# Remove current field #}
+                                    {% for f in current_fields %}
+                                        {% if f != field %}
+                                            {% set _ = next_fields_list.append(f) %}
+                                        {% endif %}
+                                    {% endfor %}
+                                {% else %}
+                                    {# Add current field #}
+                                    {% set next_fields_list = current_fields + [field] %}
+                                {% endif %}
+                                
+                                {% set new_fields_raw = next_fields_list|join(',') %}
+                                
+                                {% set filter_url = url_for('index',
+                                    page=1,
+                                    search=search_term,
+                                    sort_by=sort_by,
+                                    sort_dir=sort_dir,
+                                    fields=new_fields_raw,
+                                    theme=theme) %}
+                                    
+                                <a href="{{ filter_url }}" class="badge m-1 {% if is_active %}bg-primary text-light{% else %}bg-info text-dark{% endif %}">
+                                    {{ field }}
+                                </a>
                             {% endfor %}
                         </td>
                         <td><a href="{{ professor.profile_url }}" target="_blank">لینک</a></td>
